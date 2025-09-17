@@ -1,8 +1,19 @@
+from symtable import Class
+from tkinter.font import names
+
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
-class Category(models.Model):
+class AuditData(models.Model):
+    createdAt = models.DateTimeField(default=timezone.now, editable=False)
+    modifiedAt = models.DateTimeField(auto_now=True)
+    class Meta:
+        abstract = True
+
+
+class Category(AuditData):
     name = models.CharField(max_length=255, primary_key=True)
 
     class Meta:
@@ -12,7 +23,7 @@ class Category(models.Model):
         ]
 
 
-class Product(models.Model):
+class Product(AuditData):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -24,5 +35,18 @@ class Product(models.Model):
                 check=Q(stock__gte=0), name="stock_stock_greater_than0"
             )
         ]
+
+
+
+
+class ProductDescription(AuditData):
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='description')
+    description = models.TextField()
+    slug = models.SlugField(max_length=255, unique=True)
+
+
+class Order(AuditData):
+    product = models.ManyToManyField(Product, related_name="products")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
 
 
